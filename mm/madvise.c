@@ -13,7 +13,6 @@
 #include <linux/hugetlb.h>
 #include <linux/sched.h>
 #include <linux/ksm.h>
-#include <linux/file.h>
 
 /*
  * Any behaviour which results in changes to the vma->vm_flags needs to

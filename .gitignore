@@ -1,4 +1,4 @@
-# SaberKernel by Ptmr3
+# JediKernel by Ptmr3
 # NOTE! Don't add files that are generated in specific
 # subdirectories here. Add them in the ".gitignore" file
 # in that subdirectory instead.
@@ -33,6 +33,7 @@ modules.builtin
 *.lzo
 *.patch
 *.gcno
+patch-*
 
 #
 # Top-level generic files
@@ -89,6 +90,7 @@ GSYMS
 GTAGS
 
 *.orig
+*.rej
 *~
 \#*#
 _t32
