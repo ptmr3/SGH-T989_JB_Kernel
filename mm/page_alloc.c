@@ -2168,6 +2168,7 @@ __alloc_pages_slowpath(gfp_t gfp_mask, unsigned int order,
 	unsigned long pages_reclaimed = 0;
 	unsigned long did_some_progress;
 	bool sync_migration = false;
+	bool deferred_compaction = false;
 #ifdef CONFIG_ANDROID_WIP
 	unsigned long start_tick = jiffies;
 #endif
