@@ -26,6 +26,10 @@
 #include <asm/unaligned.h>
 #include <linux/firmware.h>
 
+#ifdef CONFIG_TOUCH_WAKE
+#include <linux/touch_wake.h>
+#endif
+
 #if defined(CONFIG_KOR_MODEL_SHV_E160S) || defined(CONFIG_KOR_MODEL_SHV_E160K) || defined (CONFIG_KOR_MODEL_SHV_E160L) || defined(CONFIG_USA_MODEL_SGH_I717) 
 #include "mXT540e__APP_V1-3-AA_.h"
 #else
@@ -788,6 +792,10 @@ set_lcd_esd_ignore(1);
 		input_mt_slot(data->input_dev, i);
 		input_mt_report_slot_state(data->input_dev, MT_TOOL_FINGER, true);
 		
+#ifdef CONFIG_TOUCH_WAKE
+		if (!device_is_suspended())
+#endif
+		    {
 		input_report_abs(data->input_dev, ABS_MT_POSITION_X, data->fingers[i].x);
 		input_report_abs(data->input_dev, ABS_MT_POSITION_Y, data->fingers[i].y);
 		input_report_abs(data->input_dev, ABS_MT_PRESSURE, data->fingers[i].z);
@@ -799,23 +807,11 @@ set_lcd_esd_ignore(1);
 		#endif
 	}
 
-#if 0
-#if defined(CONFIG_SHAPE_TOUCH)
-		if (sec_debug_level() != 0)
-			printk(KERN_DEBUG "[TSP] id[%d],x=%d,y=%d,z=%d,w=%d,com=%d\n",
-				i , data->fingers[i].x, data->fingers[i].y, data->fingers[i].z,
-				data->fingers[i].w, data->fingers[i].component);
-		else
-			printk(KERN_DEBUG "[TSP] id[%d] status:%d\n", i, data->fingers[i].z);
-#else
-		if (sec_debug_level() != 0)
-			printk(KERN_DEBUG "[TSP] id[%d],x=%d,y=%d,z=%d,w=%d\n",
-				i , data->fingers[i].x, data->fingers[i].y, data->fingers[i].z,
-				data->fingers[i].w);
-		else
-			printk(KERN_DEBUG "[TSP] id[%d] status:%d\n", i, data->fingers[i].z);
+#ifdef CONFIG_TOUCH_WAKE
+    touch_press();
 #endif
-#else
+
+
 		if (data->fingers[i].z == 0)
 			printk(KERN_DEBUG "[TSP] released\n");
 		else
@@ -1460,6 +1456,7 @@ static int mxt540e_internal_resume(struct mxt540e_data *data)
 
 static void mxt540e_early_suspend(struct early_suspend *h)
 {
+#ifndef CONFIG_TOUCH_WAKE
 	struct mxt540e_data *data = container_of(h, struct mxt540e_data, early_suspend);
 
 //	set_lcd_esd_ignore(1);  // remove to use changed linux level
@@ -1474,10 +1471,12 @@ static void mxt540e_early_suspend(struct early_suspend *h)
 	} else {
 		printk("[TSP] %s, but already off\n", __func__);
 	}
+#endif
 }
 
 static void mxt540e_late_resume(struct early_suspend *h)
 {
+#ifndef CONFIG_TOUCH_WAKE
 	bool ta_status = 0;
 	u8 id[ID_BLOCK_SIZE];    
 	int ret = 0;    
@@ -1525,7 +1524,30 @@ static void mxt540e_late_resume(struct early_suspend *h)
 		printk("[TSP] %s, but already on\n", __func__);
 	}
 //	set_lcd_esd_ignore(0); // remove to use changed linux level
+#endif
 }
+#ifdef CONFIG_TOUCH_WAKE
+struct mxt224_data * touchwake_data;
+
+void touchscreen_disable(void)
+{
+    disable_irq(touchwake_data->client->irq);
+    mxt224_internal_suspend(touchwake_data);
+
+    return;
+}
+EXPORT_SYMBOL(touchscreen_disable);
+
+void touchscreen_enable(void)
+{
+    mxt224_internal_resume(touchwake_data);
+    enable_irq(touchwake_data->client->irq);
+
+    return;
+}
+EXPORT_SYMBOL(touchscreen_enable);
+#endif
+
 #else
 static int mxt540e_suspend(struct device *dev)
 {
@@ -3325,6 +3347,11 @@ static int __devinit mxt540e_probe(struct i2c_client *client, const struct i2c_d
 	data->early_suspend.resume = mxt540e_late_resume;
 	register_early_suspend(&data->early_suspend);
 #endif
+
+#ifdef CONFIG_TOUCH_WAKE
+  touchwake_data = data;
+#endif
+
 	return 0;
 
 err_irq:
