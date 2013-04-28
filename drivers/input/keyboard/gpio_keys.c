@@ -25,17 +25,6 @@
 #include <linux/gpio_keys.h>
 #include <linux/workqueue.h>
 #include <linux/gpio.h>
-#include <linux/irqdesc.h>
-#ifdef CONFIG_FAST_BOOT
-#include <linux/wakelock.h>
-#endif
-
-#ifdef CONFIG_TOUCH_WAKE
-extern void set_powerkeydev(struct input_dev *input_device);
-#endif
-
-
-extern struct class *sec_class;
 
 struct gpio_button_data {
 	struct gpio_keys_button *button;
@@ -515,10 +504,6 @@ static int __devinit gpio_keys_probe(struct platform_device *pdev)
 			wakeup = 1;
 
 		input_set_capability(input, type, button->code);
-#ifdef CONFIG_TOUCH_WAKE
-      pr_info("powerkey device set to: %p \n", input);
-      set_powerkeydev(input);
-#endif
 	}
 
 	error = sysfs_create_group(&pdev->dev.kobj, &gpio_keys_attr_group);
