@@ -26,6 +26,9 @@
 #include <asm/unaligned.h>
 #include <linux/firmware.h>
 //#include <mach/cpufreq.h>
+#ifdef CONFIG_TOUCHSCREEN_MXT768E
+#include "mxt768e.h"
+#endif
 //imsi blocked by Xtopher #include <mach/sec_debug.h>
 #include <linux/input/mt.h>   // SLOT
 
@@ -1444,7 +1447,7 @@ static void report_input_data(struct mxt224_data *data)
 #ifdef CONFIG_TOUCH_WAKE
 	if (!device_is_suspended())
 #endif
-	
+
 #if defined(TOUCH_NON_SLOT)
 		input_report_abs(data->input_dev, ABS_MT_POSITION_X, data->fingers[i].x);
 		input_report_abs(data->input_dev, ABS_MT_POSITION_Y, data->fingers[i].y);
@@ -2430,10 +2433,6 @@ void TSP_forced_release_for_call(void)
 
 		copy_data->fingers[i].z = 0;
 
-#ifdef CONFIG_TOUCH_WAKE
-    if (!device_is_suspended())
-#endif
-        {
 #if defined(TOUCH_NON_SLOT)
 		input_report_abs(copy_data->input_dev, ABS_MT_POSITION_X, copy_data->fingers[i].x);
 		input_report_abs(copy_data->input_dev, ABS_MT_POSITION_Y, copy_data->fingers[i].y);
@@ -2455,10 +2454,6 @@ void TSP_forced_release_for_call(void)
 		input_report_abs(copy_data->input_dev, ABS_MT_TOUCH_MAJOR, copy_data->fingers[i].z);
 #endif
 		touch_is_pressed_arr[i] = 0;
-
-#ifdef CONFIG_TOUCH_WAKE
-    touch_press();
-#endif
 	
 		if (copy_data->fingers[i].z == 0)
 			copy_data->fingers[i].z = -1;
