@@ -60,7 +60,7 @@ Melfas touchkey register
 #define END_KEY 0x04
 
 #define I2C_M_WR 0		/* for i2c */
-#define DEVICE_NAME "sec_touchkey"
+#define DEVICE_NAME "melfas_touchkey"
 
 
 /*sec_class sysfs*/
@@ -109,7 +109,7 @@ static bool g_debug_switch = false;
 #endif
 
 static const struct i2c_device_id melfas_touchkey_id[] = {
-	{"sec_touchkey", 0},
+	{"melfas_touchkey", 0},
 	{}
 };
 
@@ -128,7 +128,7 @@ static int tkey_led_vdd_enabled = 1;
 
 struct i2c_driver touchkey_i2c_driver = {
 	.driver = {
-		.name = "sec_touchkey_driver",
+		.name = "melfas_touchkey_driver",
 		.owner	= THIS_MODULE,
 	},
 	.id_table = melfas_touchkey_id,
@@ -685,7 +685,7 @@ static int i2c_touchkey_probe(struct i2c_client *client, const struct i2c_device
 
 	touchkey_driver->client = client;
 	touchkey_driver->client->irq = IRQ_TOUCHKEY_INT;
-	strlcpy(touchkey_driver->client->name, "sec-touchkey", I2C_NAME_SIZE);
+	strlcpy(touchkey_driver->client->name, "melfas-touchkey", I2C_NAME_SIZE);
 
 	// i2c_set_clientdata(client, state);
 	input_dev = input_allocate_device();
@@ -696,7 +696,7 @@ static int i2c_touchkey_probe(struct i2c_client *client, const struct i2c_device
 	touchkey_driver->input_dev = input_dev;
 
 	input_dev->name = DEVICE_NAME;
-	input_dev->phys = "sec-touchkey/input0";
+	input_dev->phys = "melfas-touchkey/input0";
 	input_dev->id.bustype = BUS_HOST;
 
 	set_bit(EV_SYN, input_dev->evbit);
@@ -757,48 +757,76 @@ static int i2c_touchkey_probe(struct i2c_client *client, const struct i2c_device
 
 static void init_hw(void)
 {
-	int rc;
-	struct pm8058_gpio_cfg {
-		int            gpio;
-		struct pm_gpio cfg;
-	};
+  int rc;
+  struct pm8058_gpio_cfg {
+    int                gpio;
+    struct pm_gpio cfg;
+  };
 
-	struct pm8058_gpio_cfg touchkey_int_cfg = 
-	{
-		13,
-		{
-			.direction		= PM_GPIO_DIR_IN,
-			.pull			= PM_GPIO_PULL_NO,//PM_GPIO_PULL_NO,
-			.vin_sel		= 2,
-			.function		= PM_GPIO_FUNC_NORMAL,
-			.inv_int_pol	= 0,
-		},
-	};
+  struct pm8058_gpio_cfg touchkey_int_cfg =
+  {
+    13,
+    {
+      .direction      = PM_GPIO_DIR_IN,
+      .pull           = PM_GPIO_PULL_NO,//PM_GPIO_PULL_NO,
+      .vin_sel        = 2,
+      .function       = PM_GPIO_FUNC_NORMAL,
+      .inv_int_pol    = 0,
+    },
+  };
 
-	rc = pm8xxx_gpio_config(touchkey_int_cfg.gpio, &touchkey_int_cfg.cfg);
-	if (rc < 0) {
-		pr_err("%s pmic gpio config failed\n", __func__);
-		return;
-	}
-	
-#if defined (CONFIG_USA_MODEL_SGH_I727)
-	if (get_hw_rev() >= 0x0a){
-		irq_set_irq_type(IRQ_TOUCHKEY_INT, IRQ_TYPE_EDGE_RISING);	
-	} else { 
-		irq_set_irq_type(IRQ_TOUCHKEY_INT, IRQ_TYPE_EDGE_FALLING);
-	}
-#elif defined (CONFIG_USA_MODEL_SGH_I717) || defined(CONFIG_USA_MODEL_SGH_I577) || defined(CONFIG_CAN_MODEL_SGH_I577R)
+  #if defined(CONFIG_KOR_MODEL_SHV_E160L)
+    msleep(200);
+  #endif
 
-		irq_set_irq_type(IRQ_TOUCHKEY_INT, IRQ_TYPE_EDGE_FALLING);
+  rc = pm8xxx_gpio_config(touchkey_int_cfg.gpio, &touchkey_int_cfg.cfg);
+  if (rc < 0) {
+    pr_err("%s pmic gpio config failed\n", __func__);
+    return;
+  }
+
+#if defined (CONFIG_KOR_MODEL_SHV_E110S)
+  if (get_hw_rev() >= 0x06){
+    irq_set_irq_type(IRQ_TOUCHKEY_INT, IRQ_TYPE_EDGE_RISING);
+  } else {
+    irq_set_irq_type(IRQ_TOUCHKEY_INT, IRQ_TYPE_EDGE_FALLING);
+  }
+#elif defined (CONFIG_JPN_MODEL_SC_03D)
+  if (get_hw_rev() >= 0x05){
+    irq_set_irq_type(IRQ_TOUCHKEY_INT, IRQ_TYPE_EDGE_RISING);
+  } else {
+    irq_set_irq_type(IRQ_TOUCHKEY_INT, IRQ_TYPE_EDGE_FALLING);
+  }
+#elif defined(CONFIG_USA_MODEL_SGH_I577) || defined(CONFIG_CAN_MODEL_SGH_I577R)
+
+    irq_set_irq_type(IRQ_TOUCHKEY_INT, IRQ_TYPE_EDGE_FALLING);
+
+#elif defined (CONFIG_EUR_MODEL_GT_I9210)
+  if (get_hw_rev() >= 0x07){
+    irq_set_irq_type(IRQ_TOUCHKEY_INT, IRQ_TYPE_EDGE_RISING);
+  } else {
+    irq_set_irq_type(IRQ_TOUCHKEY_INT, IRQ_TYPE_EDGE_FALLING);
+  }
+#elif defined (CONFIG_USA_MODEL_SGH_I727)
+  if (get_hw_rev() >= 0x0a){
+    irq_set_irq_type(IRQ_TOUCHKEY_INT, IRQ_TYPE_EDGE_RISING);
+  } else {
+    irq_set_irq_type(IRQ_TOUCHKEY_INT, IRQ_TYPE_EDGE_FALLING);
+  }
+#elif defined (CONFIG_USA_MODEL_SGH_I717) || defined(CONFIG_USA_MODEL_SGH_I757) || defined(CONFIG_CAN_MODEL_SGH_I757M)
+
+    irq_set_irq_type(IRQ_TOUCHKEY_INT, IRQ_TYPE_EDGE_FALLING);
 
 #elif defined (CONFIG_USA_MODEL_SGH_T989) || defined (CONFIG_USA_MODEL_SGH_T769)
-	if (get_hw_rev() >= 0x0d){
-		irq_set_irq_type(IRQ_TOUCHKEY_INT, IRQ_TYPE_EDGE_RISING);	
-	} else { 
-		irq_set_irq_type(IRQ_TOUCHKEY_INT, IRQ_TYPE_EDGE_FALLING);  
-	}
+  if (get_hw_rev() >= 0x0d){
+    irq_set_irq_type(IRQ_TOUCHKEY_INT, IRQ_TYPE_EDGE_RISING);
+  } else {
+    irq_set_irq_type(IRQ_TOUCHKEY_INT, IRQ_TYPE_EDGE_FALLING);
+  }
+#elif defined(CONFIG_KOR_MODEL_SHV_E160L)
+  irq_set_irq_type(IRQ_TOUCHKEY_INT, IRQ_TYPE_EDGE_FALLING);
 #else
-	irq_set_irq_type(IRQ_TOUCHKEY_INT, IRQ_TYPE_LEVEL_LOW);
+  irq_set_irq_type(IRQ_TOUCHKEY_INT, IRQ_TYPE_LEVEL_LOW);
 #endif
 }
 
@@ -831,7 +859,7 @@ struct file_operations touchkey_update_fops = {
 
 static struct miscdevice touchkey_update_device = {
 	.minor = MISC_DYNAMIC_MINOR,
-	.name = "sec_touchkey",
+	.name = "melfas_touchkey",
 	.fops = &touchkey_update_fops,
 };
 
@@ -1213,7 +1241,7 @@ static int __init touchkey_init(void)
 		pr_err("Failed to create device file(%s)!\n", dev_attr_touchkey_brightness.attr.name);
 	}
 
-	touchkey_wq = create_singlethread_workqueue("sec_touchkey_wq");
+	touchkey_wq = create_singlethread_workqueue("melfas_touchkey_wq");
 	if (!touchkey_wq)
 		return -ENOMEM;
 
